@@ -10,8 +10,11 @@ use {
 pub struct PdfResources {
     /// External graphics objects
     pub xobjects: XObjectList,
-    /// Patterns used on this page. Do not yet, use, placeholder.
-    pub patterns: PatternList,
+
+    /// Sorry.
+    pub pattern_counter: u32,
+    pub patterns: lopdf::Dictionary,
+
     /// Graphics states used on this page
     pub graphics_states: ExtendedGraphicsStateList,
     /// Layers / optional content ("Properties") in the resource dictionary
@@ -45,10 +48,15 @@ impl PdfResources {
 
     /// __STUB__: Adds a pattern to the resources, to be used like a color
     #[inline]
-    pub fn add_pattern(&mut self, pattern: Pattern)
-    -> PatternRef
-    {
-        self.patterns.add_pattern(pattern)
+    pub fn add_pattern<T: Into<lopdf::Object>>(&mut self, pattern: T) -> Vec<u8> {
+        use std::io::Write;
+
+        let mut key = Vec::new();
+        write!(&mut key, "Sh{}", self.pattern_counter).unwrap();
+
+        self.patterns.set(key.clone(), pattern);
+        self.pattern_counter += 1;
+        key
     }
 
     /// See `XObject::Into_with_document`.
@@ -64,7 +72,6 @@ impl PdfResources {
             let mut ocg_references = Vec::<OCGRef>::new();
 
             let xobjects_dict: lopdf::Dictionary = self.xobjects.into_with_document(doc);
-            let patterns_dict: lopdf::Dictionary = self.patterns.into();
             let graphics_state_dict: lopdf::Dictionary = self.graphics_states.into();
 
             if !layers.is_empty() {
@@ -84,8 +91,8 @@ impl PdfResources {
                 dict.set("XObject", lopdf::Object::Dictionary(xobjects_dict));
             }
 
-            if patterns_dict.len() > 0 {
-                dict.set("Pattern", lopdf::Object::Dictionary(patterns_dict));
+            if self.patterns.len() > 0 {
+                dict.set("Shading", lopdf::Object::Dictionary(self.patterns));
             }
 
             if graphics_state_dict.len() > 0 {

@@ -126,12 +126,12 @@ impl PdfPage {
     }
 
     /// __STUB__: Adds a pattern to the pages resources
-    #[inline]
-    pub fn add_pattern(&mut self, pattern: Pattern)
-    -> PatternRef
-    {
-        self.resources.add_pattern(pattern)
-    }
+    // #[inline]
+    // pub fn add_pattern(&mut self, pattern: Pattern)
+    // -> PatternRef
+    // {
+    //     self.resources.add_pattern(pattern)
+    // }
 
     /// __STUB__: Adds an XObject to the pages resources.
     /// __NOTE__: Watch out for scaling. Your XObject might be invisible or only 1pt x 1pt big

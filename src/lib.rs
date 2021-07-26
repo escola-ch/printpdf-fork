@@ -335,6 +335,7 @@
 
 extern crate lopdf;
 extern crate rusttype;
+extern crate usvg;
 extern crate time;
 #[cfg(all(target_arch = "wasm32", target_os = "unknown"))]
 extern crate js_sys;
@@ -349,6 +350,7 @@ pub mod errors;
 pub mod utils;
 mod glob_defines;
 pub mod indices;
+pub mod svg;
 
 pub use self::errors::Error;
 pub use self::errors::PdfError;

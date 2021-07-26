@@ -1,6 +1,6 @@
 //! PDF layer management. Layers can contain referenced or real content.
 
-use lopdf;
+use lopdf::{self, ObjectId};
 
 use indices::{PdfPageIndex, PdfLayerIndex};
 use std::rc::Weak;
@@ -69,6 +69,52 @@ impl PdfLayerReference {
         for op in line_ops {
             self.internal_add_operation(op);
         }
+    }
+
+    #[inline]
+    pub fn add_ops<I: IntoIterator<Item = Operation>>(&self, ops: I)
+    {
+        for op in ops {
+            self.internal_add_operation(op);
+        }
+    }
+
+    #[inline]
+    pub fn add_op(&self, op: Operation) {
+        self.internal_add_operation(op);
+    }
+
+    // pub fn add_svg<T: Into<Pt>>(
+    //     &self,
+    //     data: &str,
+    //     x: T, y: T,
+    //     constraint: crate::svg::SvgSizeConstraint,
+    // ) -> Result<(), usvg::Error> {
+    //     let tree = usvg::Tree::from_str(data, &Default::default())?;
+    //     crate::svg::draw_svg(self, &tree, constraint, x.into().0, y.into().0);
+    //     Ok(())
+    // }
+
+    pub fn add_pattern<T: Into<lopdf::Object>>(&self, pattern: T) -> Vec<u8> {
+        let doc = self.document.upgrade().unwrap();
+        let mut doc = doc.borrow_mut();
+        let page_mut = &mut doc.pages[self.page.0];
+
+        page_mut.resources.add_pattern(pattern)
+    }
+
+    pub fn add_object<T: Into<lopdf::Object>>(&self, object: T) -> ObjectId {
+        let doc = self.document.upgrade().unwrap();
+        let mut doc = doc.borrow_mut();
+
+        doc.inner_doc.add_object(object)
+    }
+
+    pub fn add_svg(
+        &self,
+        tree: &usvg::Tree,
+    ) {
+        crate::svg::draw_svg(self, tree);
     }
 
     /// Add an image to the layer
@@ -245,6 +291,23 @@ impl PdfLayerReference {
         page_mut.layers[self.layer.0]
             .operations.push(lopdf::content::Operation::new(
                 "gs", vec![lopdf::Object::Name(new_ref.gs_name.as_bytes().to_vec())]
+        ));
+    }
+
+    pub fn set_fill_alpha(&self, alpha: f64)
+    {
+        let new_fill_alpha_state = ExtendedGraphicsStateBuilder::new()
+            .with_current_fill_alpha(alpha)
+            .build();
+
+        let doc = self.document.upgrade().unwrap();
+        let mut doc = doc.borrow_mut();
+        let page_mut = &mut doc.pages[self.page.0];
+
+        let new_ref = page_mut.add_graphics_state(new_fill_alpha_state);
+
+        page_mut.layers[self.layer.0].operations.push(lopdf::content::Operation::new(
+            "gs", vec![lopdf::Object::Name(new_ref.gs_name.as_bytes().to_vec())]
         ));
     }
 

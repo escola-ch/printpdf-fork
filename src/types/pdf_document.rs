@@ -7,7 +7,7 @@ use std::io::BufWriter;
 use utils::random_character_string_32;
 
 use crate::OffsetDateTime;
-use lopdf;
+use lopdf::{self, Dictionary, Object, ObjectId, dictionary};
 
 use indices::*;
 use {
@@ -266,6 +266,32 @@ impl PdfDocumentReference {
         }
 
         Ok(())
+    }
+
+    pub fn add_object<T: Into<Object>>(&self, object: T) -> ObjectId {
+        let mut doc = self.document.borrow_mut();
+
+        doc.inner_doc.add_object(object)
+    }
+
+    pub fn add_linear_gradient(&self) -> ObjectId {
+        let mut doc = self.document.borrow_mut();
+
+        doc.inner_doc.add_object(dictionary!(
+            "Type" => "Pattern",
+            "PatternType" => 2, // shading pattern
+            "Shading" => dictionary!(
+                "ShadingType" => 2, // axial shading
+                "ColorSpace" => "DeviceRGB", // idk
+                "Coords" => vec![
+                    // x0 y0 x1 y1
+                ],
+                // domain is implicitly [0, 1]
+                "Function" => dictionary!(
+
+                ),
+            ),
+        ))
     }
 
     /// Save PDF Document, writing the contents to the target
