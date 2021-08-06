@@ -75,7 +75,7 @@ impl DocumentInfo {
     {
         use lopdf::Dictionary as LoDictionary;
         use lopdf::Object::*;
-        use lopdf::StringFormat::Literal;
+        use lopdf::StringFormat::{Literal, Hexadecimal};
         use std::iter::FromIterator;
 
         let trapping = if trapping { "True" } else { "False" };
@@ -89,7 +89,13 @@ impl DocumentInfo {
             ("CreationDate", String(info_create_date.into_bytes(), Literal)),
             ("ModDate", String(info_mod_date.into_bytes(), Literal)),
             ("GTS_PDFXVersion", String(gts_pdfx_version.into(), Literal)),
-            ("Title", String(document_title.into().as_bytes().to_vec(), Literal))
+            ("Title", String(
+                std::iter::once(0xFEFF)
+                    .chain(document_title.into().encode_utf16())
+                    .flat_map(|c: u16| c.to_be_bytes())
+                    .collect(),
+                Hexadecimal,
+            )),
         ]))
     }
 }
