@@ -170,11 +170,11 @@ impl PdfLayerReference {
     /// Set the current font, only valid in a `begin_text_section` to
     /// `end_text_section` block
     #[inline]
-    pub fn set_font(&self, font: &IndirectFontRef, font_size: i64)
+    pub fn set_font(&self, font: &IndirectFontRef, font_size: f64)
     -> ()
     {
         self.internal_add_operation(Operation::new("Tf",
-            vec![font.name.clone().into(), (font_size).into()]
+            vec![font.name.clone().into(), font_size.into()]
         ));
     }
 
@@ -566,7 +566,7 @@ impl PdfLayerReference {
 
     /// Add text to the file, x and y are measure in millimeter from the bottom left corner
     #[inline]
-    pub fn use_text<S>(&self, text: S, font_size: i64,
+    pub fn use_text<S>(&self, text: S, font_size: f64,
                        x: Mm, y: Mm, font: &IndirectFontRef)
     -> () where S: Into<String>
     {
