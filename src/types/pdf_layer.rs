@@ -390,9 +390,9 @@ impl PdfLayerReference {
     /// Values are given in points. A value of 3 (pt) will increase
     /// the spacing inside a word by 3pt.
     #[inline]
-    pub fn set_character_spacing(&self, spacing: i64) {
+    pub fn set_character_spacing(&self, spacing: f64) {
         self.internal_add_operation(Operation::new("Tc",
-            vec![lopdf::Object::Integer(spacing)]
+            vec![lopdf::Object::Real(spacing)]
         ));
     }
 
@@ -405,9 +405,9 @@ impl PdfLayerReference {
     /// However, the function itself is valid and _will work_
     /// with builtin fonts.
     #[inline]
-    pub fn set_word_spacing(&self, spacing: i64) {
+    pub fn set_word_spacing(&self, spacing: f64) {
         self.internal_add_operation(Operation::new("Tw",
-            vec![lopdf::Object::Integer(spacing)]
+            vec![lopdf::Object::Real(spacing)]
         ));
     }
 
