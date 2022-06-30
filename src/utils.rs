@@ -131,3 +131,25 @@ pub(crate) fn random_character_string_32() -> String {
 fn u8_to_char(input: u8) -> char {
     ('A' as u8 + input) as char
 }
+
+pub fn text_bytes_for_font(text: &str, font: &rusttype::Font) -> Vec<u8> {
+    use rusttype::Codepoint as Cp;
+
+    let char_iter = text.chars();
+    let mut list_gid = Vec::<u16>::new();
+
+    for ch in char_iter {
+        // note: font.glyph will panic if the character is \0
+        // since that can't happen in Rust, I think we're safe here
+        let glyph = font.glyph(Cp(ch as u32));
+        list_gid.push(glyph.id().0 as u16);
+
+        // todo - kerning !!
+        // font.pair_kerning(scale, id, base_glyph.id());
+    }
+
+    list_gid
+        .iter()
+        .flat_map(|x| vec![(x >> 8) as u8, (x & 255) as u8])
+        .collect::<Vec<u8>>()
+}
