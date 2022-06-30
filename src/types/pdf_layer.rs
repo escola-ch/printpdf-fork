@@ -569,7 +569,7 @@ impl PdfLayerReference {
 
         let operand = content.map(|c| match c {
             GappedTextElement::Text(text) => String(bytes(text), Hexadecimal),
-            GappedTextElement::Gap(gap) => Integer(-(gap as i64)),
+            GappedTextElement::Gap(gap) => Real(-gap),
         }).collect();
 
         doc.pages[self.page.0].layers[self.layer.0]
@@ -651,6 +651,6 @@ impl PdfLayerReference {
 pub enum GappedTextElement<'a> {
     Text(&'a str),
 
-    /// The gap in thousandths of unit of text space.
-    Gap(u16),
+    /// The gap in thousandths of a unit of text space.
+    Gap(f64),
 }
