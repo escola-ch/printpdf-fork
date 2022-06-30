@@ -569,7 +569,7 @@ impl PdfLayerReference {
 
         let operand = content.map(|c| match c {
             GappedTextElement::Text(text) => String(bytes(text), Hexadecimal),
-            GappedTextElement::Gap(gap) => Integer(gap as i64),
+            GappedTextElement::Gap(gap) => Integer(-(gap as i64)),
         }).collect();
 
         doc.pages[self.page.0].layers[self.layer.0]
