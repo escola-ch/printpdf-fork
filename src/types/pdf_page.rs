@@ -183,4 +183,11 @@ impl PdfPageReference {
             layer: layer,
         }
     }
+
+    pub fn layers_len(&self) -> usize {
+        let doc = self.document.upgrade().unwrap();
+        let doc = doc.borrow();
+
+        doc.pages[self.page.0].layers.len()
+    }
 }
