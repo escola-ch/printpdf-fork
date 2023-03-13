@@ -73,17 +73,21 @@ fn draw_group(
     None
 }
 
-fn apply_transform(layer: &PdfLayerReference, transform: svgtypes::Transform) {
+fn svg_transform_to_pdf_matrix(transform: svgtypes::Transform) -> Vec<Object> {
     use lopdf::Object::Real;
 
-    layer.add_op(Operation::new("cm", vec![
+    vec![
         Real(transform.a),
         Real(transform.b),
         Real(transform.c),
         Real(transform.d),
         Real(transform.e),
         Real(transform.f),
-    ]));
+    ]
+}
+
+fn apply_transform(layer: &PdfLayerReference, transform: svgtypes::Transform) {
+    layer.add_op(Operation::new("cm", svg_transform_to_pdf_matrix(transform)));
 }
 
 fn color(c: svgtypes::Color) -> Vec<Object> {
@@ -92,6 +96,13 @@ fn color(c: svgtypes::Color) -> Vec<Object> {
         (c.green as f64 / 255.).into(),
         (c.blue as f64 / 255.).into(),
     ];
+}
+
+fn transform_point(x: f64, y: f64, transform: svgtypes::Transform) -> (f64, f64) {
+    (
+        transform.a * x + transform.c * y + transform.e,
+        transform.b * x + transform.d * y + transform.f,
+    )
 }
 
 fn linear_gradient(layer: &PdfLayerReference, lg: &LinearGradient) -> lopdf::ObjectId {
@@ -172,15 +183,27 @@ fn linear_gradient_shading(layer: &PdfLayerReference, lg: &LinearGradient) -> lo
 
         // TODO: Spread Method
 
+        "Coords" => {
+            let (x1, y1) = transform_point(lg.x1, lg.y1, lg.transform);
+            let (x2, y2) = transform_point(lg.x2, lg.y2, lg.transform);
+
+            vec![
+                x1.into(),
+                y1.into(),
+                x2.into(),
+                y2.into(),
+            ]
+        },
+
         // TODO
         "Function" => dictionary!(
-            "FunctionType" => 3, // Sampled Function
+            "FunctionType" => 3, // Stitching function
             "Domain" => vec![0.into(), 1.into()],
 
             "Functions" => stops
                 .windows(2)
                 .map(|w| dictionary!(
-                    "FunctionType" => 2,
+                    "FunctionType" => 2, // Exponential interpolation function
                     "Domain" => vec![0.into(), 1.into()],
                     "C0" => color(w[0].color),
                     "C1" => color(w[1].color),
