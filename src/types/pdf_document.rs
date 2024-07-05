@@ -210,6 +210,12 @@ impl PdfDocumentReference {
         self
     }
 
+    #[inline]
+    pub fn with_keywords(self, keywords: String) -> Self {
+        self.document.borrow_mut().metadata.keywords = Some(keywords);
+        self
+    }
+
     // ----- ADD FUNCTIONS
 
     /// Create a new pdf page and returns the index of the page

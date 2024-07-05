@@ -55,27 +55,28 @@ pub struct DocumentInfo {
 }
 
 impl DocumentInfo {
-
     /// Create a new doucment info dictionary from a document
-    pub fn new()
-    -> Self
-    {
+    pub fn new() -> Self {
         Self::default()
     }
 
     /// This functions is similar to the IntoPdfObject trait method,
     /// but takes additional arguments in order to delay the setting
-    pub(in types) fn into_obj<S>(self,
-                                 document_title: S,
-                                 trapping: bool,
-                                 conformance: PdfConformance,
-                                 creation_date: OffsetDateTime,
-                                 modification_date: OffsetDateTime)
-    -> lopdf::Object where S: Into<String>
+    pub(in types) fn into_obj<S>(
+        self,
+        document_title: S,
+        trapping: bool,
+        conformance: PdfConformance,
+        creation_date: OffsetDateTime,
+        modification_date: OffsetDateTime,
+        keywords: Option<String>,
+    ) -> lopdf::Object
+    where
+        S: Into<String>,
     {
         use lopdf::Dictionary as LoDictionary;
         use lopdf::Object::*;
-        use lopdf::StringFormat::{Literal, Hexadecimal};
+        use lopdf::StringFormat::{Hexadecimal, Literal};
         use std::iter::FromIterator;
 
         let trapping = if trapping { "True" } else { "False" };
@@ -84,29 +85,49 @@ impl DocumentInfo {
         let info_mod_date = to_pdf_time_stamp_metadata(modification_date);
         let info_create_date = to_pdf_time_stamp_metadata(creation_date);
 
-        Dictionary(LoDictionary::from_iter(vec![
-            ("Trapped", trapping.into()),
-            ("CreationDate", String(info_create_date.into_bytes(), Literal)),
-            ("ModDate", String(info_mod_date.into_bytes(), Literal)),
-            ("GTS_PDFXVersion", String(gts_pdfx_version.into(), Literal)),
-            ("Title", String(
-                std::iter::once(0xFEFF)
-                    .chain(document_title.into().encode_utf16())
-                    .flat_map(|c: u16| std::array::IntoIter::new(c.to_be_bytes()))
-                    .collect(),
-                Hexadecimal,
-            )),
-        ]))
+        Dictionary(LoDictionary::from_iter(
+            vec![
+                ("Trapped", trapping.into()),
+                (
+                    "CreationDate",
+                    String(info_create_date.into_bytes(), Literal),
+                ),
+                ("ModDate", String(info_mod_date.into_bytes(), Literal)),
+                ("GTS_PDFXVersion", String(gts_pdfx_version.into(), Literal)),
+                (
+                    "Title",
+                    String(
+                        std::iter::once(0xFEFF)
+                            .chain(document_title.into().encode_utf16())
+                            .flat_map(|c: u16| std::array::IntoIter::new(c.to_be_bytes()))
+                            .collect(),
+                        Hexadecimal,
+                    ),
+                ),
+            ]
+            .into_iter()
+            .chain(keywords.map(|k| {
+                (
+                    "Keywords",
+                    String(
+                        std::iter::once(0xFEFF)
+                            .chain(k.encode_utf16())
+                            .flat_map(|c: u16| std::array::IntoIter::new(c.to_be_bytes()))
+                            .collect(),
+                        Hexadecimal,
+                    ),
+                )
+            })),
+        ))
     }
 }
 
 // D:20170505150224+02'00'
-fn to_pdf_time_stamp_metadata(date: OffsetDateTime)
--> String
-{
+fn to_pdf_time_stamp_metadata(date: OffsetDateTime) -> String {
     // Since the time is in UTC, we know that the time zone
     // difference to UTC is 0 min, 0 sec, hence the 00'00
-    format!("D:{:04}{:02}{:02}{:02}{:02}{:02}+00'00'",
+    format!(
+        "D:{:04}{:02}{:02}{:02}{:02}{:02}+00'00'",
         date.year(),
         date.month(),
         date.day(),
